@@ -10,7 +10,7 @@
 **                 J. Uber, University of Cincinnati
 **  VERSION:       1.1.00
 **  LAST UPDATE:   10/14/08
-**  BUG FIX:	   BUG ID 09 (add roughness as a hydraulic variable) Feng Shang 01/29/2008	
+**  BUG FIX:	   BUG ID 09 (add roughness as a hydraulic variable) Feng Shang 01/29/2008
 *******************************************************************************/
 
 #include <stdio.h>
@@ -22,7 +22,8 @@
 #include "msxtypes.h"
 #include "msxutils.h"
 #include "msxdict.h"
-#include "epanet2.h"
+#include "../include/epanet2.h"
+#include "../include/epanetmsx.h"
 
 //  Constants
 //-----------
@@ -43,13 +44,13 @@ static double **TermArray;             // Incidence array used to check Terms  /
 enum InpErrorCodes {                   // Error codes (401 - 409)
     INP_ERR_FIRST        = 400,
     ERR_LINE_LENGTH,
-    ERR_ITEMS, 
+    ERR_ITEMS,
     ERR_KEYWORD,
     ERR_NUMBER,
     ERR_NAME,
     ERR_RESERVED_NAME,
     ERR_DUP_NAME,
-    ERR_DUP_EXPR, 
+    ERR_DUP_EXPR,
     ERR_MATH_EXPR,
     INP_ERR_LAST};
 
@@ -62,7 +63,7 @@ static char  *InpErrorTxt[INP_ERR_LAST-INP_ERR_FIRST] = {
     "Error 405 (reference to undefined object)",
     "Error 406 (illegal use of a reserved name)",
     "Error 407 (name already used by another object)",
-    "Error 408 (species already assigned an expression)", 
+    "Error 408 (species already assigned an expression)",
     "Error 409 (illegal math expression)"};
 
 //  Imported functions
@@ -121,16 +122,16 @@ int MSXinp_countMsxObjects()
 **    an error code (0 if no error)
 */
 {
-    char  line[MAXLINE+1];             // line from input data file     
-    char  wLine[MAXLINE+1];            // working copy of input line   
-    char  *tok;                        // first string token of line          
-    int   sect = -1;                   // input data sections          
+    char  line[MAXLINE+1];             // line from input data file
+    char  wLine[MAXLINE+1];            // working copy of input line
+    char  *tok;                        // first string token of line
+    int   sect = -1;                   // input data sections
     int   errcode = 0;                 // error code
-    int   errsum = 0;                  // number of errors found                   
+    int   errsum = 0;                  // number of errors found
     long  lineCount = 0;
 
 // --- write name of input file to EPANET report file
-    
+
     strcpy(MSX.Msg, "Processing MSX input file ");
     strcpy(line, MSX.MsxFile.name);
     strcat(MSX.Msg, line);
@@ -404,7 +405,7 @@ int  getNewSection(char *tok, char *sectWords[], int *sect)
 **    checks if a line begins a new section in the input file.
 **
 **  Input:
-**    tok = a string token 
+**    tok = a string token
 **    sectWords = array of input file section keywords
 **
 **  Output:
@@ -433,7 +434,7 @@ int  getNewSection(char *tok, char *sectWords[], int *sect)
 //=============================================================================
 
 int addSpecies(char *line)
-/* 
+/*
 **  Purpose:
 **    adds a species ID name to the project.
 **
@@ -458,7 +459,7 @@ int addSpecies(char *line)
 //=============================================================================
 
 int addCoeff(char *line)
-/* 
+/*
 **  Purpose:
 **    adds a coefficient ID name to the project.
 **
@@ -493,12 +494,12 @@ int addCoeff(char *line)
 //=============================================================================
 
 int addTerm(char *id)
-/* 
+/*
 **  Purpose:
 **    adds an intermediate expression term ID name to the project.
 **
 **  Input:
-**    id = name of an intermediate expression term 
+**    id = name of an intermediate expression term
 **
 **  Returns:
 **    an error code (0 if no error)
@@ -517,7 +518,7 @@ int addTerm(char *id)
 //=============================================================================
 
 int addPattern(char *id)
-/* 
+/*
 **  Purpose:
 **    adds a time pattern ID name to the project.
 **
@@ -544,12 +545,12 @@ int addPattern(char *id)
 //=============================================================================
 
 int checkID(char *id)
-/* 
+/*
 **  Purpose:
 **    checks that an object's name is unique
 **
 **  Input:
-**    id = name of an object 
+**    id = name of an object
 **
 **  Returns:
 **    an error code (0 if successful)
@@ -562,7 +563,7 @@ int checkID(char *id)
       if (MSXutils_strcomp(id, HydVarWords[i])) return ERR_RESERVED_NAME;
       i++;
    }
-    
+
 // --- check that id name not used before
 
     if ( MSXproj_findObject(SPECIES, id) > 0 ||
@@ -571,12 +572,12 @@ int checkID(char *id)
          MSXproj_findObject(CONSTANT, id)  > 0
        ) return ERR_DUP_NAME;
     return 0;
-}        
+}
 
 //=============================================================================
 
 int parseLine(int sect, char *line)
-/* 
+/*
 **  Purpose:
 **    parses the contents of a line of input data.
 **
@@ -605,7 +606,7 @@ int parseLine(int sect, char *line)
 
       case s_TERM:
         return parseTerm();
-      
+
       case s_PIPE:
         return parseExpression(LINK);
 
@@ -786,7 +787,7 @@ int parseCoeff()
 
     // --- get Parameter's value
 
-        MSX.Param[i].id = MSXproj_findID(PARAMETER, Tok[1]); 
+        MSX.Param[i].id = MSXproj_findID(PARAMETER, Tok[1]);
         if ( Ntokens >= 3 )
         {
             if ( !MSXutils_getDouble(Tok[2], &x) ) return ERR_NUMBER;
@@ -808,7 +809,7 @@ int parseCoeff()
 
     // --- get Constant's value
 
-        MSX.Const[i].id = MSXproj_findID(CONSTANT, Tok[1]); 
+        MSX.Const[i].id = MSXproj_findID(CONSTANT, Tok[1]);
         MSX.Const[i].value = 0.0;
         if ( Ntokens >= 3 )
         {
@@ -849,11 +850,11 @@ int parseTerm()
 
     for (j=1; j<Ntokens; j++)
 	{                                                                          //1.1.00
-		strcat(s, Tok[j]);                     
+		strcat(s, Tok[j]);
 		k = MSXproj_findObject(TERM, Tok[j]);                                  //1.1.00
 		if ( k > 0 ) TermArray[i][k] = 1.0;                                    //1.1.00
 	}                                                                          //1.1.00
-    
+
 // --- convert expression into a postfix stack of op codes
 
     expr = mathexpr_create(s, getVariableCode);
@@ -883,7 +884,7 @@ int parseExpression(int classType)
     char s[MAXLINE+1] = "";
     MathExpr *expr;
 
-// --- determine expression type 
+// --- determine expression type
 
     if ( Ntokens < 3 ) return ERR_ITEMS;
     k = MSXutils_findmatch(Tok[0], ExprTypeWords);
@@ -908,7 +909,7 @@ int parseExpression(int classType)
 // --- reconstruct the expression string from its tokens
 
     for (j=2; j<Ntokens; j++) strcat(s, Tok[j]);
-    
+
 // --- convert expression into a postfix stack of op codes
 
     expr = mathexpr_create(s, getVariableCode);
@@ -927,7 +928,7 @@ int parseExpression(int classType)
         MSX.Species[i].tankExprType = k;
         break;
     }
-    return 0;    
+    return 0;
 }
 
 //=============================================================================
@@ -1127,7 +1128,7 @@ int parseSource()
     source->c0      = x;
     source->pat     = i;
     return 0;
-}    
+}
 
 //=============================================================================
 
@@ -1195,7 +1196,7 @@ int parseReport()
     {
 
     // --- keyword is NODE; parse ID names of reported nodes
-    
+
         case 0:
         if ( MSXutils_strcomp(Tok[1], ALL) )
         {
@@ -1279,7 +1280,7 @@ int getVariableCode(char *id)
 **    index of the symbolic variable or term named id.
 **
 **  Note:
-**    Variables are assigned consecutive code numbers starting from 1 
+**    Variables are assigned consecutive code numbers starting from 1
 **    and proceeding through each Species, Term, Parameter and Constant.
 */
 {
@@ -1290,10 +1291,10 @@ int getVariableCode(char *id)
     j = MSXproj_findObject(PARAMETER, id);
     if ( j >= 1 ) return MSX.Nobjects[SPECIES] + MSX.Nobjects[TERM] + j;
     j = MSXproj_findObject(CONSTANT, id);
-    if ( j >= 1 ) return MSX.Nobjects[SPECIES] + MSX.Nobjects[TERM] + 
+    if ( j >= 1 ) return MSX.Nobjects[SPECIES] + MSX.Nobjects[TERM] +
                          MSX.Nobjects[PARAMETER] + j;
     j = MSXutils_findmatch(id, HydVarWords);
-    if ( j >= 1 ) return MSX.Nobjects[SPECIES] + MSX.Nobjects[TERM] + 
+    if ( j >= 1 ) return MSX.Nobjects[SPECIES] + MSX.Nobjects[TERM] +
                          MSX.Nobjects[PARAMETER] + MSX.Nobjects[CONSTANT] + j;
     return -1;
 }
@@ -1326,7 +1327,7 @@ int  getTokens(char *s)
     for (n = 0; n < MAXTOKS; n++) Tok[n] = NULL;
     n = 0;
 
-    // --- truncate s at start of comment 
+    // --- truncate s at start of comment
 
     c = strchr(s,';');
     if (c) *c = '\0';
@@ -1336,7 +1337,7 @@ int  getTokens(char *s)
 
     while (len > 0 && n < MAXTOKS)
     {
-        m = (int)strcspn(s,SEPSTR);              // find token length 
+        m = (int)strcspn(s,SEPSTR);              // find token length
         if (m == 0) s++;                    // no token found
         else
         {
@@ -1347,7 +1348,7 @@ int  getTokens(char *s)
                 m = (int)strcspn(s,"\"\n"); // find end quote or new line
             }
             s[m] = '\0';                    // null-terminate the token
-            Tok[n] = s;                     // save pointer to token 
+            Tok[n] = s;                     // save pointer to token
             n++;                            // update token count
             s += m+1;                       // begin next token
         }

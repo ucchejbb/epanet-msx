@@ -25,13 +25,14 @@
 **  format of these files is described in the EPANET and EPANET-MSX Users
 **  Manuals, respectively.
 *******************************************************************************/
+//extern "C"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <float.h>
 
-#include "epanet2.h"                   // EPANET toolkit header file
-#include "epanetmsx.h"                 // EPANET-MSX toolkit header file
+#include "../include/epanet2.h" // EPANET toolkit header file
+#include "../include/epanetmsx.h" // EPANET-MSX toolkit header file
 
 int main(int argc, char *argv[])
 /*
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
             printf("\n\n... EPANET-MSX runtime error; error code = %d\n", err);
             break;
         }
-        else 
+        else
             printf("\r  o Computing water quality at hour %-4d", t/3600);
 
     // --- report results

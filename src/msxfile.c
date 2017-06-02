@@ -10,12 +10,12 @@
 **  VERSION:       1.1.00
 **  LAST UPDATE:   09/12/08
 **  BUG FIX:       Bug ID 10, Feng Shang, 01/08/2008
-				   
-				   In funtcion saveSources, MSX.Pattern[source->pat].id rather 
+
+				   In funtcion saveSources, MSX.Pattern[source->pat].id rather
 				   than MSX.Pattern[source->pat] should be printed, 09/12/08 FS
-				   
-				   BUG ID 53, check if the source type > -1 before saving. 
-				   FS 09/23/08 
+
+				   BUG ID 53, check if the source type > -1 before saving.
+				   FS 09/23/08
 *******************************************************************************/
 
 #include <stdio.h>
@@ -24,7 +24,9 @@
 #include "msxtypes.h"
 #include "msxutils.h"
 #include "msxdict.h"
-#include "epanet2.h"
+#include "../include/epanet2.h"
+#include "../include/epanetmsx.h"
+
 
 //  External variables
 //--------------------

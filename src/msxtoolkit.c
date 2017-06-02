@@ -30,8 +30,8 @@
 
 #include "msxtypes.h"
 #include "msxutils.h"                                                          //1.1.00
-#include "epanet2.h"
-#include "epanetmsx.h"
+#include "../include/epanet2.h"
+#include "../include/epanetmsx.h"
 
 //  External variables
 //--------------------
@@ -147,14 +147,14 @@ int   DLLEXPORT  MSXusehydfile(char *fname)
 
     if ( !MSX.ProjectOpened ) return ERR_MSX_NOT_OPENED;
 
-// --- close any existing hydraulics file 
+// --- close any existing hydraulics file
 
     if ( MSX.HydFile.file )
     {
 	fclose(MSX.HydFile.file);
-        if ( MSX.HydFile.mode == SCRATCH_FILE ) remove(MSX.HydFile.name);      //(LR-10/05/08, to fix bug ??)   
-    } 
-	
+        if ( MSX.HydFile.mode == SCRATCH_FILE ) remove(MSX.HydFile.name);      //(LR-10/05/08, to fix bug ??)
+    }
+
 
 // --- open hydraulics file
 
@@ -1115,7 +1115,7 @@ int  DLLEXPORT  MSXsetpattern(int pat, double mult[], int len)
         }
         MSX.Pattern[pat].length++;
     }
-	
+
 	MSX.Pattern[pat].interval = 0;						//Feng Shang   04/17/2008
 	MSX.Pattern[pat].current = MSX.Pattern[pat].first;    //Feng Shang   04/17/2008
     return 0;

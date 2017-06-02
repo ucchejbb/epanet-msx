@@ -11,6 +11,7 @@
 **  VERSION:       1.1.00
 **  LAST UPDATE:   10/06/08
 **  BUG FIX: Bug ID 08 Feng Shang 01/07/08
+** DEALING WITH ZERO FLOW CONDITION J. Burkhardt (May 2017)
 ******************************************************************************/
 
 #include <stdio.h>
@@ -19,7 +20,7 @@
 #include <math.h>
 
 #include "msxtypes.h"
-#include "epanet2.h"
+#include "../include/epanet2.h"
 
 // Constants
 //----------
@@ -37,7 +38,7 @@ static char *Logo[] =
      "*                      E P A N E T  -  M S X                     *",
      "*                   Multi-Species Water Quality                  *",
      "*                   Analysis for Pipe  Networks                  *",
-     "*                           Version 1.1                          *",     //1.1.00
+     "*                         Version 1.1.01                         *",     //1.1.00 --> 1.1.01 JBB Modifications
      "******************************************************************"};
 
 static char PageHdr[] = "  Page %d                                    ";

@@ -43,6 +43,11 @@ static char           HasWallSpecies;  // wall species indicator
 static char           OutOfMemory;     // out of memory indicator
 static alloc_handle_t *QualPool;       // memory pool
 
+// Global Variables
+//-----------------
+double         flowthresh = 0.00005;     // min flow threshold //1.1.01 - JBB
+
+
 //  Imported functions
 //--------------------
 int    MSXchem_open(void);
@@ -252,7 +257,7 @@ int  MSXqual_init()
     MSX.Htime = 0;                         //Hydraulic solution time
     MSX.Qtime = 0;                         //Quality routing time
     MSX.Rtime = MSX.Rstart;                //Reporting time
-    MSX.Nperiods = 0;                      //Number fo reporting periods
+    MSX.Nperiods = 0;                      //Number of reporting periods
 
 // --- open binary output file if results are to be saved
 
@@ -402,7 +407,8 @@ double  MSXqual_getLinkQual(int k, int m)
 */
 {
     double  vsum = 0.0,
-            msum = 0.0;
+            msum = 0.0;//,
+ //           temp = 0.0;
     Pseg    seg;
 
     seg = MSX.FirstSeg[k];
@@ -411,8 +417,18 @@ double  MSXqual_getLinkQual(int k, int m)
         vsum += seg->v;
         msum += (seg->c[m])*(seg->v);
         seg = seg->prev;
+        *VolIn = ABS(MSX.Q[k])*1.0;
     }
-    if (vsum > 0.0) return(msum/vsum);
+    if ( vsum > 0.0 ) //(*VolIn > 0.0001)
+    {
+        return(msum/vsum);
+    }
+ //   else if (*VolIn < *flowthresh)
+ //   {
+ //       //printf("OMG I'm here\n");
+ //       temp = (msum/vsum);
+ //       return(temp);
+ //   }
     else
     {
         return (MSXqual_getNodeQual(MSX.Link[k].n1, m) +
@@ -739,7 +755,8 @@ void advectSegs(long dt)
     // --- skip zero-length links (pumps & valves) & no-flow links
 
         if ( NewSeg[k] == NULL ||
-             MSX.Link[(k)].len == 0.0 || MSX.Q[k] == 0.0 ) continue;
+             MSX.Link[(k)].len == 0.0 || MSX.Q[k] <= flowthresh ) continue; //1.1.01 JBB, cumulative small flow/zero flow, still register flow.
+             //changed from -> MSX.Q[k] == 0.0
 
     // --- find conc. of wall species in new segment to be added
     //     and adjust conc. of wall species to reflect shifted
@@ -940,6 +957,8 @@ void accumulate(long dt)
         j = DOWN_NODE(k);             // downstream node
         v = ABS(MSX.Q[k])*dt;         // flow volume
 
+        if (v < flowthresh) v = 0.0; //1.1.01 JBB, trying to fix concentration creep
+
     // --- if link volume < flow volume, then transport upstream node's
     //     quality to downstream node and remove all link segments
 
@@ -1042,7 +1061,7 @@ void getIncidentConcen()
         {
             for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
             {
-                if ( MSX.Species[m].type == BULK )
+                if (( MSX.Species[m].type == BULK ) && ( VolIn[j] > flowthresh )) // 1.1.01 - JBB
                   MassIn[j][m] += MSX.FirstSeg[k]->c[m];
             }
             VolIn[j]++;
@@ -1052,7 +1071,7 @@ void getIncidentConcen()
         {
             for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
             {
-                if ( MSX.Species[m].type == BULK )
+                if (( MSX.Species[m].type == BULK )&& ( VolIn[j] > flowthresh )) // 1.1.01 - JBB
                     MassIn[j][m] += MSX.LastSeg[k]->c[m];
             }
             VolIn[j]++;
@@ -1063,7 +1082,7 @@ void getIncidentConcen()
 
     for (k=1; k<=MSX.Nobjects[NODE]; k++)
     {
-        if (VolIn[k] > 0.0)
+        if (VolIn[k] > flowthresh) // 1.1.01 JBB 0.0 -> 0.000005
         {
             for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
                 X[k][m] = MassIn[k][m]/VolIn[k];
