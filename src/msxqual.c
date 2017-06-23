@@ -407,8 +407,7 @@ double  MSXqual_getLinkQual(int k, int m)
 */
 {
     double  vsum = 0.0,
-            msum = 0.0;//,
- //           temp = 0.0;
+            msum = 0.0;
     Pseg    seg;
 
     seg = MSX.FirstSeg[k];
@@ -419,6 +418,7 @@ double  MSXqual_getLinkQual(int k, int m)
         seg = seg->prev;
         *VolIn = ABS(MSX.Q[k])*1.0;
     }
+//    printf("%i, %lf, %lf\n", k, vsum, msum);
     if ( vsum > 0.0 ) //(*VolIn > 0.0001)
     {
         return(msum/vsum);
@@ -606,7 +606,7 @@ void  initSegs()
 **     none.
 */
 {
-    int     j, k, m;
+    int     i, j, k, m; //1.1.01 added i
     double  v;
 
 // --- examine each link
@@ -628,12 +628,13 @@ void  initSegs()
     //     if no initial link quality supplied
 
         j = DOWN_NODE(k);
+        i = UP_NODE(k); // 1.1.01 added
         for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
         {
             if ( MSX.Link[k].c0[m] != MISSING )
                 MSX.C1[m] = MSX.Link[k].c0[m];
             else if ( MSX.Species[m].type == BULK )
-                MSX.C1[m] = MSX.Node[j].c0[m];
+                MSX.C1[m] = MSX.Node[j].c0[m]; //1.1.01 switched MSX.Node[j].c0[m]
             else MSX.C1[m] = 0.0;
         }
 
@@ -796,6 +797,7 @@ void getNewSegWallQual(int k, long dt, Pseg newseg)
     if ( newseg == NULL ) return;
     v = LINKVOL(k);
 	vin = ABS(MSX.Q[k])*dt;
+	if (vin < flowthresh) vin = 0; // 1.1.01 JBB
     if (vin > v) vin = v;
 
 // --- start at last (most upstream) existing WQ segment
@@ -827,7 +829,8 @@ void getNewSegWallQual(int k, long dt, Pseg newseg)
 
         for (m = 1; m <= MSX.Nobjects[SPECIES]; m++)
         {
-            if ( MSX.Species[m].type == WALL ) newseg->c[m] += vadded*seg->c[m];
+            if ( MSX.Species[m].type == WALL ) newseg->c[m] += vadded*seg->c[m];// (seg->c[m]-newseg->c[m])*vadded/newseg->v;//LINKVOL(k); //1.1.01 (/LINKVOL(k)
+            //if (k==28) printf("%f", newseg->c[m]);
         }
 
     // --- move to next downstream WQ segment
@@ -935,7 +938,7 @@ void accumulate(long dt)
 */
 {
     int    i, j, k, m, n;
-    double cseg, v, vseg;
+    double cseg, v, vseg, lv; // 1.1.01 added lv = linkvol
     Pseg   seg;
 
 // --- compute average conc. of segments incident on each node
@@ -956,13 +959,14 @@ void accumulate(long dt)
         i = UP_NODE(k);               // upstream node
         j = DOWN_NODE(k);             // downstream node
         v = ABS(MSX.Q[k])*dt;         // flow volume
+        lv = LINKVOL(k);               // link volume 1.1.01
 
         if (v < flowthresh) v = 0.0; //1.1.01 JBB, trying to fix concentration creep
 
     // --- if link volume < flow volume, then transport upstream node's
     //     quality to downstream node and remove all link segments
 
-        if (LINKVOL(k) < v)
+        if (lv < v) //1.1.01: Changed LINKVOL(k) to lv
         {
             VolIn[j] += v;
             seg = MSX.FirstSeg[k];
@@ -1000,7 +1004,8 @@ void accumulate(long dt)
             {
                 if ( MSX.Species[m].type != BULK ) continue;
                 cseg = seg->c[m];
-                MassIn[j][m] += vseg*cseg;
+                MassIn[j][m] += (cseg - (MassIn[j][m]/vseg))*vseg; //---1.1.01 changed from cseg*vseg
+                //printf("%i, %f\n", k, MassIn[j][m]); //---1.1.01 debug
             }
             VolIn[j] += vseg;
 
@@ -1026,7 +1031,7 @@ void accumulate(long dt)
                 seg->v -= vseg;
             }
 
-       } // End while
+            } // End while
 
     } // Next link
 }
@@ -1082,14 +1087,15 @@ void getIncidentConcen()
 
     for (k=1; k<=MSX.Nobjects[NODE]; k++)
     {
-        if (VolIn[k] > flowthresh) // 1.1.01 JBB 0.0 -> 0.000005
+        if (VolIn[k] > flowthresh) // 1.1.01 JBB 0.0 -> flowthresh
         {
             for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
                 X[k][m] = MassIn[k][m]/VolIn[k];
+//                printf("%i, %f\n", k, X[k][m]); // get rid of this 1.1.01
         }
     }
 }
-
+// may need to update this to fix the zeroing of concentrations at nodes
 //=============================================================================
 
 void updateNodes(long dt)
@@ -1114,7 +1120,6 @@ void updateNodes(long dt)
     for (i=1; i<=MSX.Nobjects[NODE]; i++)
     {
     // --- node is a junction
-
         j = MSX.Node[i].tank;
         if (j <= 0)
         {
@@ -1126,7 +1131,7 @@ void updateNodes(long dt)
         // --- if inflow volume is non-zero, then compute the mixture
         //     concentration resulting at the node
 
-            if (VolIn[i] > 0.0)
+            if (VolIn[i] > flowthresh)                          // 1.1.01 JBB
             {
                 for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
                     MSX.Node[i].c[m] = MassIn[i][m]/VolIn[i];
@@ -1162,7 +1167,7 @@ void updateNodes(long dt)
 
             else
             {
-                if (VolIn[i] > 0.0)
+                if (VolIn[i] > 0.0) // 1.1.01 should this be flowthresh? not 0.0
                 {
                     for (m=1; m<=MSX.Nobjects[SPECIES]; m++)
                     {
