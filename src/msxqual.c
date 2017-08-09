@@ -946,7 +946,7 @@ void accumulate(long dt)
 
     getIncidentConcen();
 
-// --- reset cumlulative inflow to each node to zero
+// --- reset cumulative inflow to each node to zero
 
     memset(VolIn, 0, (MSX.Nobjects[NODE]+1)*sizeof(double));
     n = (MSX.Nobjects[NODE]+1)*(MSX.Nobjects[SPECIES]+1);
@@ -1004,8 +1004,8 @@ void accumulate(long dt)
             {
                 if ( MSX.Species[m].type != BULK ) continue;
                 cseg = seg->c[m];
-                MassIn[j][m] += (cseg - (MassIn[j][m]/vseg))*vseg; //---1.1.01 changed from cseg*vseg
-                //printf("%i, %f\n", k, MassIn[j][m]); //---1.1.01 debug
+                MassIn[j][m] += cseg * vseg;//(cseg - (MassIn[j][m]/vseg))*vseg; //---1.1.01 changed from cseg*vseg
+                //printf("%i, %f, %f, %f, %f\n", k, cseg, vseg, v, MassIn[j][m]); //---1.1.01 debug
             }
             VolIn[j] += vseg;
 
@@ -1342,7 +1342,7 @@ void release(long dt)
     {
     // --- ignore links with no flow
 
-        if (MSX.Q[k] == 0.0)
+        if (MSX.Q[k] == 0.0) // come back to this.
         {
             MSXqual_removeSeg(NewSeg[k]);
             continue;

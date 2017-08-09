@@ -53,6 +53,7 @@ double MSXqual_getNodeQual(int j, int m);
 double MSXqual_getLinkQual(int k, int m);
 int    MSXrpt_write(void);
 int    MSXfile_save(FILE *f);
+char * tmpname; // 1.1.01 JBB
 
 //=============================================================================
 
@@ -113,15 +114,15 @@ int   DLLEXPORT  MSXsolveH()
     if ( MSX.HydFile.mode == SCRATCH_FILE ) remove(MSX.HydFile.name);
 
 // --- create a temporary hydraulics file
-
-    MSXutils_getTempName(MSX.HydFile.name);                                    //1.1.00
+    tmpname = MSX.HydFile.name; // 1.1.01 JBB Trying to get rid of the duplication of hydraulic files.
+    MSXutils_getTempName(MSX.HydFile.name);                                      //1.1.00
     MSX.HydFile.mode = SCRATCH_FILE;                                           //(LR-10/05/08, to fix bug ??)
 
 // --- use EPANET to solve for & save hydraulics results
 
     CALL(err, ENsolveH());
-    CALL(err, ENsavehydfile(MSX.HydFile.name));
-    CALL(err, MSXusehydfile(MSX.HydFile.name));
+    //CALL(err, ENsavehydfile(MSX.HydFile.name));   // 1.1.01 Testing to see if this prevents the duplications of hydraulic files.
+    CALL(err, MSXusehydfile(tmpname));
     return err;
 }
 
